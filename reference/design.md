@@ -12,12 +12,16 @@ One glance says what is in progress and what is not. Every decision below serves
 nothing else. The board is disposable: items are deleted when done, so it never has to carry
 history, search, or archive.
 
+The page carries no heading. There is one board at one path, so a name at the top would
+discriminate against nothing and would spend the largest type on the screen on the one element
+that says nothing about the work. The `<title>` names the window, and the first group label
+opens the page.
+
 ## The rail
 
-There is exactly one text rail. The board title, the group labels and the item titles all
-start at `--rail` (22px). The gutter to its left carries nothing but status markers, and the
-dates form a second rail hard against the right edge. Two rails, both deliberate, nothing
-floating between them.
+There is exactly one text rail. The group labels and the item titles all start at `--rail`
+(22px). The gutter to its left carries nothing but status markers, and the dates form a second
+rail hard against the right edge. Two rails, both deliberate, nothing floating between them.
 
 Markers are left-aligned in the gutter rather than centred, which keeps 13px of air between
 the marker and the text rail. The done check is 11px against the 9px dots because a check
@@ -26,11 +30,10 @@ centre line.
 
 ## Type roles
 
-Five roles, one treatment each. Adding a sixth treatment is how this screen degrades.
+Four roles, one treatment each. Adding a fifth treatment is how this screen degrades.
 
 | Role | Treatment |
 |---|---|
-| Board title | 22px / 600 / -0.015em |
 | Group label | 11px / 500 / 0.085em / uppercase / faint |
 | Item title | 15px / 1.5 / primary, dropping to muted when done |
 | Item note | 13px / 1.45 / muted |
