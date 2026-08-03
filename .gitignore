@@ -1,0 +1,4 @@
+# Echo memory and its activation pointers stay local, so the published skill ships standalone.
+.echo/
+CLAUDE.md
+AGENTS.md

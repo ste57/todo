@@ -44,20 +44,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* One text rail down the page: board title, group labels and item titles all
-   start at --rail. The gutter left of it carries nothing but status markers. */
+/* One text rail down the page: group labels and item titles all start at --rail.
+   The gutter left of it carries nothing but status markers. */
 .board {
   --rail: 22px;
   max-width: 600px;
   margin: 0 auto;
-}
-
-.board-title {
-  margin: 0 0 44px;
-  padding-left: var(--rail);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
 }
 
 .group + .group { margin-top: 36px; }
@@ -143,20 +135,18 @@ body {
   to { opacity: 1; transform: none; }
 }
 
-.board-title, .group-label, .item {
+.group-label, .item {
   animation: rise 0.34s cubic-bezier(0.2, 0.65, 0.3, 1) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board-title, .group-label, .item { animation: none; }
+  .group-label, .item { animation: none; }
 }
 </style>
 </head>
 <body>
 
-<main class="board" id="board">
-  <h1 class="board-title">Slate</h1>
-</main>
+<main class="board" id="board"></main>
 
 <script>
 // A malformed line drops itself rather than blanking the board. The write path is a
