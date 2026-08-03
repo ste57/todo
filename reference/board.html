@@ -166,6 +166,12 @@ body {
 /* Done rows carry the project inline, so their date is alone in the block. The stacked
    treatment above is tuned to sit under a project; alone it needs the full meta line-height to
    stay on the title's first-line rail. */
+/* A deadline is not meta about the row, it is the row's most urgent fact, so it steps up the
+   existing text hierarchy once passed. No new colour: the accent stays spent on what is in
+   flight. */
+.meta .due { white-space: nowrap; }
+.meta .overdue { color: var(--text); font-weight: 500; }
+
 .meta .date:only-child {
   margin-top: 0;
   font-size: 12px;
@@ -263,7 +269,6 @@ const DONE_SHOWN = 50;
 const WARM_HOURS = 2;
 const COLD_HOURS = 24;
 const STAGGER = 26;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHECK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 6.3 4.8 8.7 9.6 3.3"/></svg>';
 
 let incoming = [];
@@ -298,12 +303,52 @@ function commit(items) {
   draw(items);
 }
 
-// Split the ISO string by hand: new Date('2026-07-28') parses as UTC midnight
-// and renders as the previous day anywhere west of Greenwich.
-function formatDate(iso) {
-  if (!iso) return '';
-  const parts = String(iso).split('-');
-  return Number(parts[2]) + ' ' + MONTHS[Number(parts[1]) - 1];
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+// Date-only stamps are local dates and are split by hand: new Date('2026-07-28') parses as UTC
+// midnight and lands on the previous day anywhere west of Greenwich. Timestamps carry their own
+// offset, so they are parsed and then reduced to the local day they fell on.
+function toLocalDay(stamp) {
+  if (!stamp) return null;
+  const text = String(stamp);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const parts = text.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+  const parsed = Date.parse(text);
+  return isFinite(parsed) ? startOfDay(new Date(parsed)) : null;
+}
+
+// A due date runs the other way and needs its direction said, since "2d" would be ambiguous
+// once a stamp can be in the future. Overdue steps up the text hierarchy rather than taking a
+// colour: the accent answers what is in flight and spending it here would spend the only
+// signal the board has.
+function formatDue(stamp) {
+  const then = toLocalDay(stamp);
+  if (!then) return null;
+  const days = Math.round((then - startOfDay(new Date())) / 86400000);
+  if (days === 0) return 'due today';
+  if (days === 1) return 'due tomorrow';
+  if (days < 0) return (days === -1 ? '1 day' : -days + ' days') + ' overdue';
+  if (days < 7) return 'due in ' + days + 'd';
+  if (days < 31) return 'due in ' + Math.floor(days / 7) + 'w';
+  return 'due in ' + Math.floor(days / 30) + 'mo';
+}
+
+// Relative, because the question a board answers is how long, not which day. Every stamp on it
+// is in the past, so no direction is needed and the unit alone carries it.
+function formatDate(stamp) {
+  const then = toLocalDay(stamp);
+  if (!then) return '';
+  const days = Math.round((startOfDay(new Date()) - then) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + 'd';
+  if (days < 31) return Math.floor(days / 7) + 'w';
+  if (days < 365) return Math.floor(days / 30) + 'mo';
+  return Math.floor(days / 365) + 'y';
 }
 
 function el(tag, className, text) {
@@ -352,10 +397,16 @@ function itemNode(item, delay) {
   if (item.note) body.append(el('div', 'note', item.note));
   row.append(body);
 
-  const stamp = item.status === 'done' ? item.completed : item.created;
   const meta = el('div', 'meta');
   if (item.project && item.status !== 'done') meta.append(el('span', 'project', item.project));
-  meta.append(el('span', 'date', formatDate(stamp)));
+  const due = item.status === 'done' ? null : formatDue(item.due);
+  if (due) {
+    const node = el('span', 'date due', due);
+    if (Date.parse(item.due + 'T23:59:59') < Date.now()) node.classList.add('overdue');
+    meta.append(node);
+  } else {
+    meta.append(el('span', 'date', formatDate(stampFor(item))));
+  }
 
   row.append(meta);
 
@@ -416,18 +467,28 @@ function draw(items) {
 poll();
 setInterval(poll, POLL_MS);
 
-// Heat is a function of the clock, not the file, so nothing else would repaint it. Updated in
-// place rather than through draw(): a rebuild would clear the board and replay the staggered
-// rise every five minutes, on a surface whose entire motion budget is that one animation.
+// Heat and relative dates are both functions of the clock rather than the file, so nothing else
+// would repaint them: without this a board left open overnight still reads "today". Updated in
+// place rather than through draw(), which would clear the board and replay the staggered rise
+// every five minutes, on a surface whose entire motion budget is that one animation.
 setInterval(() => {
   if (!showing) return;
   const byId = new Map(JSON.parse(showing).map(item => [item.id, item]));
-  for (const row of document.querySelectorAll('.item.active')) {
+  for (const row of document.querySelectorAll('.item')) {
     const item = byId.get(row.dataset.id);
     if (!item) continue;
-    const warmth = heat(item);
-    row.style.setProperty('--heat', warmth.toFixed(3));
-    row.classList.toggle('cold', warmth < 0.35);
+
+    if (item.status === 'active') {
+      const warmth = heat(item);
+      row.style.setProperty('--heat', warmth.toFixed(3));
+      row.classList.toggle('cold', warmth < 0.35);
+    }
+
+    const date = row.querySelector('.date');
+    if (!date) continue;
+    const due = item.status === 'done' ? null : formatDue(item.due);
+    date.textContent = due || formatDate(stampFor(item));
+    if (due) date.classList.toggle('overdue', Date.parse(item.due + 'T23:59:59') < Date.now());
   }
 }, 300000);
 </script>

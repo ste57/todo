@@ -58,7 +58,7 @@ polls the data file once a second so the board updates itself while open.
 
 Every operation below is one whole line:
 
-    S({"id":"kebab-slug","project":"Slate","title":"...","status":"idea","created":"YYYY-MM-DD","started":null,"completed":null,"note":null})
+    S({"id":"kebab-slug","project":"Slate","title":"...","status":"idea","created":"YYYY-MM-DD","due":null,"started":null,"completed":null,"note":null})
 
 **Read** `~/Desktop/.slate-data.js` by path, all of it, first and every time. Never list the
 Desktop to check the board exists: `ls ~/Desktop` fails with "Operation not permitted" under
@@ -86,6 +86,9 @@ empty. Newest sits at the top.
   correct rather than missing; an `active` item without one predates the field, so treat it as
   fresh and stamp it next time you touch it. The board drains an active marker's colour as this
   ages, which is why setting it accurately matters.
+- `due` is a `YYYY-MM-DD` local date when the user gives a deadline, and `null` otherwise.
+  It replaces the age in the meta column and goes bold once passed. Never write a deadline
+  into the title or the note; the board cannot read it there.
 - `note` is optional and rare: a constraint the title cannot carry. Work attempted and parked
   is an `idea` with a note saying what was tried and what it waits on.
 - Three states only: `idea`, `active`, `done`. Resist adding more.
