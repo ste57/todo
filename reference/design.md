@@ -71,14 +71,16 @@ reads as cancelled; a quieter one reads as resolved.
 ## Motion
 
 Items rise 5px and fade over 340ms on load, staggered 26ms, with `backwards` fill so nothing
-flashes before its delay. Active markers stay on the 9px rail and shift slowly between two
-earth tones, with no halo, shadow, internal mark or scale change. All motion is suppressed
-under `prefers-reduced-motion`.
+flashes before its delay. Active markers stay on the 9px rail and move through a slow
+earth-tone orb loop: sage, moss, olive, clay, ochre, bark and umber, with soft clipped
+gradients and no halo, shadow, internal spot or scale change. Each active marker gets a random
+phase, duration and highlight position when rendered, so the loop does not always begin at the
+same place. All motion is suppressed under `prefers-reduced-motion`.
 
 The accent also cools. Nothing in a file can observe whether an agent is still running, so the
 board reports age rather than liveness: an active marker drains from accent toward faint
-between two and twenty four hours after its `started` stamp, and stops animating once cold. It
-is a colour leaving, not a colour added, so the one-accent rule holds.
+between two and twenty four hours after its `started` stamp, and the earth-tone loop stops once
+cold. It is a colour leaving, not a colour added, so the one-accent rule holds.
 
 The board has one hover state, on the overflow control, and it is a colour step only. Nothing
 else responds to the cursor. It is a glance surface with a single affordance, not an

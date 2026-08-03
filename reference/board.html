@@ -27,6 +27,12 @@
   }
 }
 
+@property --orb-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #5f7a52;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -83,13 +89,22 @@ body {
    the marker toward faint. Something that has claimed to be in progress since yesterday stops
    looking like it, without anyone having to maintain a flag. */
 .active .marker {
+  overflow: hidden;
   --live: color-mix(in oklab, var(--accent) calc(var(--heat, 1) * 100%), var(--faint));
-  background: var(--live);
-  animation: active-flow 4s ease-in-out infinite;
+  --orb-color: #5f7a52;
+  --flow-duration: 30s;
+  --flow-delay: 0s;
+  --shine-x: 34%;
+  --shine-y: 30%;
+  background:
+    radial-gradient(circle at var(--shine-x) var(--shine-y), color-mix(in oklab, var(--orb-color) 52%, white), transparent 62%),
+    linear-gradient(145deg, transparent 10%, color-mix(in oklab, var(--orb-color) 72%, #2f3a27) 92%),
+    var(--orb-color);
+  animation: active-flow var(--flow-duration) ease-in-out var(--flow-delay) infinite;
 }
 
 /* Gone cold: it stops breathing too. A stalled item should not animate as though it is moving. */
-.active.cold .marker { animation: none; }
+.active.cold .marker { --orb-color: var(--live); animation: none; }
 
 /* The check needs more box than a dot to read at this size. The -1px pulls its
    ink back onto the dot centres, keeping one marker rail across all states. */
@@ -197,10 +212,37 @@ body {
 
 @keyframes active-flow {
   0%, 100% {
-    background: color-mix(in oklab, var(--live) 82%, #4b6540);
+    --orb-color: #5f7a52;
   }
-  50% {
-    background: color-mix(in oklab, var(--live) 76%, #9a8f61);
+  9% {
+    --orb-color: #6f8553;
+  }
+  18% {
+    --orb-color: #7f8650;
+  }
+  27% {
+    --orb-color: #9a9449;
+  }
+  36% {
+    --orb-color: #a08a58;
+  }
+  45% {
+    --orb-color: #9b7b52;
+  }
+  54% {
+    --orb-color: #b26f45;
+  }
+  63% {
+    --orb-color: #8f6944;
+  }
+  72% {
+    --orb-color: #8a6f45;
+  }
+  81% {
+    --orb-color: #6e5f35;
+  }
+  90% {
+    --orb-color: #748154;
   }
 }
 
@@ -354,6 +396,13 @@ function itemNode(item, delay) {
   }
 
   const marker = el('span', 'marker');
+  if (item.status === 'active') {
+    const duration = 24 + Math.random() * 16;
+    marker.style.setProperty('--flow-duration', duration.toFixed(2) + 's');
+    marker.style.setProperty('--flow-delay', (-Math.random() * duration).toFixed(2) + 's');
+    marker.style.setProperty('--shine-x', (28 + Math.random() * 18).toFixed(1) + '%');
+    marker.style.setProperty('--shine-y', (24 + Math.random() * 18).toFixed(1) + '%');
+  }
   if (item.status === 'done') marker.innerHTML = CHECK;
   row.append(marker);
 
