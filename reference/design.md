@@ -71,9 +71,9 @@ reads as cancelled; a quieter one reads as resolved.
 ## Motion
 
 Items rise 5px and fade over 340ms on load, staggered 26ms, with `backwards` fill so nothing
-flashes before its delay. Active markers stay on the 9px rail and use a restrained glossy dot:
-a slow brightness lift and one soft shimmer across the surface, with no outer halo. All motion
-is suppressed under `prefers-reduced-motion`.
+flashes before its delay. Active markers stay on the 9px rail and use a restrained accent dot:
+a slow brightness lift and one soft shimmer across the surface, with no outer halo or internal
+spot. All motion is suppressed under `prefers-reduced-motion`.
 
 The accent also cools. Nothing in a file can observe whether an agent is still running, so the
 board reports age rather than liveness: an active marker drains from accent toward faint
