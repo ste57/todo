@@ -86,11 +86,11 @@ body {
 /* The accent appears here and nowhere else: colour answers "what is in flight".
    It also cools. Nothing in a file can observe whether an agent is still alive, so the board
    reports age instead of liveness: --heat runs from 1 to 0 across the window below, draining
-   the marker toward faint. Something that has claimed to be in progress since yesterday stops
+   the marker toward black. Something that has claimed to be in progress since yesterday stops
    looking like it, without anyone having to maintain a flag. */
 .active .marker {
   overflow: hidden;
-  --live: color-mix(in oklab, var(--accent) calc(var(--heat, 1) * 100%), var(--faint));
+  --live: color-mix(in oklab, var(--accent) calc(var(--heat, 1) * 100%), #000);
   --orb-color: #5f7a52;
   --flow-duration: 30s;
   --flow-delay: 0s;

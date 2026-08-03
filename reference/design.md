@@ -78,7 +78,7 @@ phase, duration and highlight position when rendered, so the loop does not alway
 same place. All motion is suppressed under `prefers-reduced-motion`.
 
 The accent also cools. Nothing in a file can observe whether an agent is still running, so the
-board reports age rather than liveness: an active marker drains from accent toward faint
+board reports age rather than liveness: an active marker drains from accent toward black
 between two and twenty four hours after its `started` stamp, and the earth-tone loop stops once
 cold. It is a colour leaving, not a colour added, so the one-accent rule holds.
 
