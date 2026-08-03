@@ -36,6 +36,32 @@ When the work finishes, find the existing item, set `status` to `done` and `comp
 today. Match on meaning rather than exact wording. **Never append a second copy of something
 already on the board.** Update it in place.
 
+## Ownership
+
+**You own every item you log, until it leaves the board.** No later session knows what you
+meant by it or whether it ever happened, so an item you created and did not resolve is an item
+nobody will resolve. That is how a board fills with work that is not being done.
+
+Before the session ends, account for every item you logged in it. Mark it `done` if the work
+finished, delete it if it was abandoned, and drop it back to `idea` if it was started and left
+unfinished. Leaving it `active` is the one thing you cannot do.
+
+The board defends itself against this being forgotten by cooling an active marker as its
+`started` stamp ages, but that reports a stall, it does not resolve one. The item is still
+yours.
+
+`active` means a session is working on it right now. When no session is, it is an `idea`. A
+board that says something is in flight when nothing is has stopped answering the only question
+it exists to answer.
+
+Items logged by other sessions are not yours. Leave them alone unless the user says otherwise.
+
+The exception is a stale one. When you read the board, compare each `active` item's `started`
+stamp to now. More than a day old and no session is plausibly still on it, whatever the status
+says. Do not silently take it over or resolve it, because you do not know what happened; say
+so, once, and let the user decide. The board fades these visually, but that only reaches a
+person looking at the screen, so reading the stamp is how you see what they see.
+
 ## Silence
 
 Capture silently. Do not announce that you logged something, do not narrate the bookkeeping,
@@ -54,7 +80,7 @@ operation below is one whole line.
 
 Item schema, written on a single line:
 
-    S({"id":"kebab-slug","title":"...","status":"idea","created":"YYYY-MM-DD","completed":null,"note":null})
+    S({"id":"kebab-slug","project":"Slate","title":"...","status":"idea","created":"YYYY-MM-DD","started":null,"completed":null,"note":null})
 
 The last line of the file is always `S.end()`. It is how the board knows the file parsed whole,
 so never remove it and never write below it.
@@ -83,8 +109,15 @@ abandoned work `done`.
 
 - `id` is a kebab slug of the title and is how you find the line again. Keep it stable, and
   never change it once written.
+- `project` names where the work lives, capitalised, usually the repo. It renders in front of
+  the title so an item from one project is never lost among another's. Never repeat it in the
+  title itself.
 - `title` is one line, sentence case, no trailing full stop.
 - `note` is optional and rare. Use it only for a constraint the title cannot carry.
+- `started` is an ISO timestamp set the moment an item becomes `active`, and cleared when it
+  leaves that state. The board drains the accent from an active marker as `started` ages, so
+  an item stalled since yesterday stops looking live. Nothing can observe whether an agent is
+  still running, so age is the honest signal; setting it accurately is what makes it work.
 - `completed` is set only on `done` and is `null` otherwise.
 - Three states only: `idea`, `active`, `done`. Resist adding more.
 - Ordinary JSON escaping is all any field needs. There is no character to watch for.

@@ -20,8 +20,14 @@ opens the page.
 ## The rail
 
 There is exactly one text rail. The group labels and the item titles all start at `--rail`
-(22px). The gutter to its left carries nothing but status markers, and the dates form a second
-rail hard against the right edge. Two rails, both deliberate, nothing floating between them.
+(22px). The gutter to its left carries nothing but status markers, and the meta block forms a
+second rail hard against the right edge. Two rails, both deliberate, nothing floating between
+them, and both flush: the marker sits at the board's left edge and the meta at its right, which
+is worth measuring after any change to the row grid.
+
+The meta block stacks project over date. When a row carries its project inline instead, the
+date is alone in the block and takes the full 22.5px meta line-height so it stays on the
+title's first line; stacked, it drops to 11px and tucks under the label.
 
 Markers are left-aligned in the gutter rather than centred, which keeps 13px of air between
 the marker and the text rail. The done check is 11px against the 9px dots because a check
@@ -38,6 +44,13 @@ Four roles, one treatment each. Adding a fifth treatment is how this screen degr
 | Item title | 15px / 1.5 / primary, dropping to muted when done |
 | Item note | 13px / 1.45 / muted |
 | Meta (date, overflow count, empty state) | 12px / faint / tabular numerals |
+| Meta label (project, stacked) | 12px / 500 / muted |
+
+The project has two placements, and they are not two roles. Done rows are short and single
+line, so it sits inline before the title in faint at the title's own size, where it groups the
+row. Everything else can wrap, and inline it indented only the first line, leaving the rest of
+the title off the rail; there it sits in the meta block instead, taking the label treatment
+above with the date beneath it at 11px. Same field, placed where each row shape can carry it.
 
 Two elements sharing a colour but jittering in size or alignment is the failure mode. If
 something new needs to appear on the board, give it an existing role rather than inventing one.
@@ -58,16 +71,29 @@ reads as cancelled; a quieter one reads as resolved.
 ## Motion
 
 Items rise 5px and fade over 340ms on load, staggered 26ms, with `backwards` fill so nothing
-flashes before its delay. That is the entire motion budget. It is suppressed under
-`prefers-reduced-motion`.
+flashes before its delay. Active markers stay on the 9px rail and use a restrained glossy dot:
+a slow brightness lift and one soft shimmer across the surface, with no outer halo. All motion
+is suppressed under `prefers-reduced-motion`.
 
-Nothing on the board has a hover state. It is a glance surface, not an application.
+The accent also cools. Nothing in a file can observe whether an agent is still running, so the
+board reports age rather than liveness: an active marker drains from accent toward faint
+between two and twenty four hours after its `started` stamp, and stops animating once cold. It
+is a colour leaving, not a colour added, so the one-accent rule holds.
+
+The board has one hover state, on the overflow control, and it is a colour step only. Nothing
+else responds to the cursor. It is a glance surface with a single affordance, not an
+application.
 
 ## Growth
 
-Done items stay visible but are capped at the five most recent, with a quiet count line for
-the remainder, so the board cannot grow unbounded. Groups render in the fixed order active,
-idea, done, and within a group the newest sits at the top.
+Done items stay visible but are capped at the fifty most recent, with a quiet count line for
+the remainder, so the board cannot grow unbounded. That line is the one control on the board
+and expands the group in place. Only the done group is ever capped, so only it gets one.
+
+Groups render in the fixed order active, idea, done. Within a group the newest sits at the top,
+sorted by the stamp that matters for the state: `completed` for done, `started` for active,
+`created` for ideas. Active sorting by `started` floats live work up and sinks the stalled,
+so position carries the same signal the colour does.
 
 ## Rules for changing it
 
