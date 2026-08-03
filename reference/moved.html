@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  THIS BOARD HAS MOVED.
+
+  The board is now ~/Desktop/.slate.html, with its items in ~/Desktop/.slate-data.js.
+  Both are dot-prefixed, so Finder hides them.
+
+  If you are an agent reading this: your slate skill is out of date. Anything you write here
+  is written to a file nothing renders. Stop, tell the user their skill needs reinstalling
+  from https://github.com/ste57/todo, and do not create a board at this path.
+
+  This file deliberately contains no NDJSON data block, and no text resembling one anywhere,
+  including in this comment. An older skill anchors its edits on that opening tag, so with no
+  match to find the write fails loudly here instead of succeeding into a file no one reads.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slate has moved</title>
+<style>
+:root { color-scheme: light dark; --bg: #fcfcfb; --text: #16161a; --muted: #6c6c75; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f0f11; --text: #ececef; --muted: #8a8a93; }
+}
+body {
+  margin: 0;
+  padding: 76px 32px;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 600px; margin: 0 auto; }
+p { margin: 0 0 12px; }
+p + p { color: var(--muted); font-size: 13px; line-height: 1.45; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <p>This board has moved to <code>~/Desktop/.slate.html</code>.</p>
+  <p>Items live alongside it in <code>.slate-data.js</code>. Both are hidden, so press
+     Cmd+Shift+. in Finder to see them. If an agent wrote here, its slate skill is out of date
+     and needs reinstalling from github.com/ste57/todo.</p>
+</main>
+</body>
+</html>

@@ -98,6 +98,10 @@ so position carries the same signal the colour does.
 ## Rules for changing it
 
 - Simplest thing that works. Structural fix over scaffolding, reduce over add.
+- `SKILL.md` is read at the start of a session alongside every other skill, so its size is a
+  standing cost. It carries rules, not reasoning: state what to do, and give a reason only when
+  the reason changes the behaviour. Anything explaining why the board works as it does belongs
+  in this file, which is read only when changing the board.
 - Polish means refining spacing, hierarchy, copy and motion. It does not mean adding subheads,
   microcopy, badges or filler.
 - The quality comes from spacing, hierarchy, restraint and the one considered accent. It does

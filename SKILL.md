@@ -1,133 +1,106 @@
 ---
 name: slate
-description: Maintains a single todo board as one self-contained HTML file at ~/Desktop/.slate.html. Use when the user raises work in normal conversation, either asking for something to be done or stating an intention to act, and when that work finishes. Logs items silently and marks them done in place, so one glance at the board says what is in progress and what is not.
+description: Keeps the user's todo board at ~/Desktop/.slate.html current. Use when they raise work in normal conversation, ask for something to be done, state an intention to act, or when that work finishes. Logs silently and marks items done in place.
 ---
 
 # Slate
 
-One HTML file on the Desktop, `~/Desktop/.slate.html`, answering one question at a glance:
-what is in progress, and what is not. The user raises work in normal conversation and you
-keep the board current without being asked.
+The board answers one question at a glance: what is in progress, and what is not. The user
+raises work in conversation and you keep it current without being asked.
 
 Never touch any other file on the Desktop.
 
 ## Capture
 
-Log a new item when the user:
+Log a new item when the user asks for work to be done ("go fix this bug") or states an
+intention to act, however vague ("I've been meaning to sort out the finances layout").
 
-- asks for work to be done ("go fix this bug", "can you redo the X")
-- states an intention to act, however vague ("I've been meaning to sort out the finances layout")
+Route on **intention to act**, not phrasing: does it describe work to be done, or something
+that is true? "I'm thinking about redoing the layout" is work. "I'm thinking we should always
+use pnpm" is a durable fact and does not go on the board. One message can carry both, and only
+the work goes on.
 
-Route on **intention to act**, not on phrasing. The test is whether it describes **work to be
-done** or **something that is true**. "I'm thinking about redoing the layout" is work and goes
-on the board. "I'm thinking we should always use pnpm" is a durable fact and does not.
+**Bias toward logging.** A wrong item costs one deletable line. When unsure, log it.
 
-One message can carry both. "The deploy keeps failing because the env var is unset, I need to
-fix it" puts only the fix on the board.
-
-**Bias toward logging.** A wrong item costs one deletable line, so the cost of over-capture is
-near zero. When unsure, log it.
-
-New items start at `idea`, or at `active` if the work is starting right now.
+New items start at `idea`, or `active` if the work is starting right now.
 
 ## Completion
 
-When the work finishes, find the existing item, set `status` to `done` and `completed` to
-today. Match on meaning rather than exact wording. **Never append a second copy of something
-already on the board.** Update it in place.
+When work finishes, find the existing item and set `status` to `done` and `completed` to
+today. Match on meaning, not wording. **Never append a second copy of something already on the
+board.** Update it in place.
 
 ## Ownership
 
-**You own every item you log, until it leaves the board.** No later session knows what you
-meant by it or whether it ever happened, so an item you created and did not resolve is an item
-nobody will resolve. That is how a board fills with work that is not being done.
+**You own every item you log until it leaves the board.** No later session knows what you meant
+by it, so one you created and did not resolve is one nobody will resolve.
 
-Before the session ends, account for every item you logged in it. Mark it `done` if the work
-finished, delete it if it was abandoned, and drop it back to `idea` if it was started and left
-unfinished. Leaving it `active` is the one thing you cannot do.
+Before the session ends, account for every item you logged: `done` if it finished, deleted if
+abandoned, back to `idea` if started and left unfinished. Leaving it `active` is the one thing
+you cannot do, because `active` means a session is working on it right now.
 
-The board defends itself against this being forgotten by cooling an active marker as its
-`started` stamp ages, but that reports a stall, it does not resolve one. The item is still
-yours.
-
-`active` means a session is working on it right now. When no session is, it is an `idea`. A
-board that says something is in flight when nothing is has stopped answering the only question
-it exists to answer.
-
-Items logged by other sessions are not yours. Leave them alone unless the user says otherwise.
-
-The exception is a stale one. When you read the board, compare each `active` item's `started`
-stamp to now. More than a day old and no session is plausibly still on it, whatever the status
-says. Do not silently take it over or resolve it, because you do not know what happened; say
-so, once, and let the user decide. The board fades these visually, but that only reaches a
-person looking at the screen, so reading the stamp is how you see what they see.
+Items logged by other sessions are not yours; leave them alone. The exception is a stale one:
+an `active` item whose `started` stamp is over a day old has no session on it, whatever the
+status says. Do not take it over or resolve it, since you do not know what happened. Say so
+once and let the user decide.
 
 ## Silence
 
-Capture silently. Do not announce that you logged something, do not narrate the bookkeeping,
-do not mention the board while adding to it. Speak only when marking something done, and then
-in one short line.
+Capture silently. Do not announce that you logged something or narrate the bookkeeping. Speak
+only when marking something done, and then in one short line. Silence is about not
+volunteering: when the user asks about the board, answer normally.
 
 ## Updating the board
 
-Items live in `~/Desktop/.slate-data.js`, **one `S({...})` call per line**. `slate.html` polls
-that file once a second and redraws when it changes, so the board updates itself while it is
-open. **Never edit `slate.html`.** It holds only markup, styles and the render.
+Items live in `~/Desktop/.slate-data.js`, **one `S({...})` call per line**, with `S.end()`
+always last. **Never edit `.slate.html`**, which holds only markup, styles and the render, and
+polls the data file once a second so the board updates itself while open.
 
-One item per line is what makes this reliable: there are no commas to place, no first or last
-item to special-case, and adding the first item is the same edit as adding the hundredth. Every
-operation below is one whole line.
-
-Item schema, written on a single line:
+Every operation below is one whole line:
 
     S({"id":"kebab-slug","project":"Slate","title":"...","status":"idea","created":"YYYY-MM-DD","started":null,"completed":null,"note":null})
 
-The last line of the file is always `S.end()`. It is how the board knows the file parsed whole,
-so never remove it and never write below it.
+**Read** `~/Desktop/.slate-data.js` by path, all of it, first and every time. Never list the
+Desktop to check the board exists: `ls ~/Desktop` fails with "Operation not permitted" under
+macOS privacy controls while reading a named file inside it works, so a failed listing proves
+nothing.
 
-### Read the current items
+**Add** the new line directly above the first `S(` line, or above `S.end()` if the board is
+empty. Newest sits at the top.
 
-Read `~/Desktop/.slate-data.js`. It holds nothing but items, so read all of it. Do this first,
-every time, so you know what is already on the board.
+**Update** by replacing the whole line, found by its unique `"id":"the-slug"`.
 
-### Add
-
-Insert the new line directly above the first `S(` line, or directly above `S.end()` when the
-board is empty. Newest items sit at the top.
-
-### Update
-
-Each line contains `"id":"the-slug"`, which is unique, so replace that whole line with the new
-version. To complete an item, set `"status":"done"` and `"completed"` to today's date.
-
-### Delete
-
-Remove the whole line. Use this when work is abandoned rather than finished, and never mark
-abandoned work `done`.
+**Delete** the whole line when work is abandoned. Never mark abandoned work `done`.
 
 ### Field rules
 
-- `id` is a kebab slug of the title and is how you find the line again. Keep it stable, and
-  never change it once written.
-- `project` names where the work lives, capitalised, usually the repo. It renders in front of
-  the title so an item from one project is never lost among another's. Never repeat it in the
-  title itself.
+- `id` is a kebab slug of the title. Never change it once written.
+- `project` names where the work lives, capitalised, usually the repo. Never repeat it in the
+  title.
 - `title` is one line, sentence case, no trailing full stop.
-- `note` is optional and rare. Use it only for a constraint the title cannot carry.
-- `started` is an ISO timestamp set the moment an item becomes `active`, and cleared when it
-  leaves that state. The board drains the accent from an active marker as `started` ages, so
-  an item stalled since yesterday stops looking live. Nothing can observe whether an agent is
-  still running, so age is the honest signal; setting it accurately is what makes it work.
-- `completed` is set only on `done` and is `null` otherwise.
+- `created` and `completed` are `YYYY-MM-DD` in the user's **local** date, never UTC. After
+  about 5pm Pacific the UTC date is already tomorrow, which puts two date bases in one file and
+  breaks every sort. `completed` is set only on `done`.
+- `started` is ISO 8601 **with offset** (`2026-08-02T21:40:00-07:00`), set when an item becomes
+  `active` and cleared when it leaves. Only `active` items carry one, so `null` elsewhere is
+  correct rather than missing; an `active` item without one predates the field, so treat it as
+  fresh and stamp it next time you touch it. The board drains an active marker's colour as this
+  ages, which is why setting it accurately matters.
+- `note` is optional and rare: a constraint the title cannot carry. Work attempted and parked
+  is an `idea` with a note saying what was tried and what it waits on.
 - Three states only: `idea`, `active`, `done`. Resist adding more.
-- Ordinary JSON escaping is all any field needs. There is no character to watch for.
+- Ordinary JSON escaping is all any field needs.
 
-If the board does not exist, copy `reference/board.html` to `~/Desktop/.slate.html` and
-`reference/board-data.js` to `~/Desktop/.slate-data.js`, then add the first item. The two files
-sit side by side and the board cannot find its data if they are separated.
+### If the board does not exist
 
-A file that fails to parse never reaches the board: `S.end()` does not run, the poll is
-discarded, and the last good state stays on screen until the next write fixes it.
+Copy `reference/board.html` to `~/Desktop/.slate.html` and `reference/board-data.js` to
+`~/Desktop/.slate-data.js`; they must sit side by side. If nothing is at `~/Desktop/slate.html`,
+copy `reference/moved.html` there too: an older version of this skill writes to that path, and
+the marker turns a silent write into an obvious one.
 
-Design detail lives in `reference/design.md`. You do not need it to add or complete an item,
-only to change how the board looks.
+Never change the board's shape or location without counting items before and after and naming
+what did not survive. A migration that quietly drops a line is indistinguishable from the user
+deleting it.
+
+Design detail, including the data format and how a bad write recovers, lives in
+`reference/design.md`. You do not need it to add or complete an item.
