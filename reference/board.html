@@ -5,12 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slate</title>
 
-<!-- One JSON object per line, newest first. Sits above the styles so it can be read
-     without them; one line per item so every edit is a whole line and there are no
-     commas to place. -->
-<script type="application/x-ndjson" id="data">
-</script>
-
 <style>
 :root {
   color-scheme: light dark;
@@ -149,13 +143,12 @@ body {
 <main class="board" id="board"></main>
 
 <script>
-// A malformed line drops itself rather than blanking the board. The write path is a
-// line edit by a machine on a file nobody validates, so one bad line must stay local.
-const items = document.getElementById('data').textContent
-  .split('\n')
-  .map(line => line.trim())
-  .filter(Boolean)
-  .flatMap(line => { try { return [JSON.parse(line)]; } catch { return []; } });
+// Items live in .slate-data.js, not in this file. A page on file:// cannot read its own
+// source, but it can go on loading script tags, and a fresh query string each time is what
+// forces the read to come off disk instead of the cache. That is the whole live update.
+// The leading dot keeps the data file out of Finder, leaving one icon on the Desktop.
+const DATA_SRC = '.slate-data.js';
+const POLL_MS = 1000;
 
 const GROUPS = [
   { status: 'active', label: 'In progress' },
@@ -167,11 +160,42 @@ const STAGGER = 26;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHECK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 6.3 4.8 8.7 9.6 3.3"/></svg>';
 
+let incoming = [];
+let parsed = false;
+let showing = null;
+
+// The data file calls these. S.end() is the last line of it, so it only runs if the whole
+// file parsed: a half written or malformed file leaves the board on its last good state
+// rather than blanking, and the next poll recovers it.
+function S(item) { incoming.push(item); }
+S.end = function () { parsed = true; };
+
+function poll() {
+  incoming = [];
+  parsed = false;
+  const tag = document.createElement('script');
+  tag.src = DATA_SRC + '?t=' + Date.now();
+  tag.onload = tag.onerror = function () {
+    tag.remove();
+    if (parsed) commit(incoming);
+  };
+  document.head.append(tag);
+}
+
+// Redraw only when the data actually differs, so a board that has not changed never
+// re-animates. When it does change, the rise is the signal that something moved.
+function commit(items) {
+  const key = JSON.stringify(items);
+  if (key === showing) return;
+  showing = key;
+  draw(items);
+}
+
 // Split the ISO string by hand: new Date('2026-07-28') parses as UTC midnight
 // and renders as the previous day anywhere west of Greenwich.
 function formatDate(iso) {
   if (!iso) return '';
-  const parts = iso.split('-');
+  const parts = String(iso).split('-');
   return Number(parts[2]) + ' ' + MONTHS[Number(parts[1]) - 1];
 }
 
@@ -200,35 +224,44 @@ function itemNode(item, delay) {
   return row;
 }
 
-const board = document.getElementById('board');
-let delay = STAGGER;
+function draw(items) {
+  const board = document.getElementById('board');
+  board.textContent = '';
+  let delay = STAGGER;
 
-if (!items.length) board.append(el('p', 'empty', 'Nothing on the slate.'));
-
-for (const group of GROUPS) {
-  const inGroup = items
-    .filter(item => item.status === group.status)
-    .sort((a, b) => String(b.completed || b.created).localeCompare(String(a.completed || a.created)));
-
-  if (!inGroup.length) continue;
-
-  const section = el('section', 'group');
-  const label = el('p', 'group-label', group.label);
-  label.style.animationDelay = delay + 'ms';
-  section.append(label);
-  delay += STAGGER;
-
-  const shown = group.status === 'done' ? inGroup.slice(0, DONE_SHOWN) : inGroup;
-  for (const item of shown) {
-    section.append(itemNode(item, delay));
-    delay += STAGGER;
+  if (!items.length) {
+    board.append(el('p', 'empty', 'Nothing on the slate.'));
+    return;
   }
 
-  const hidden = inGroup.length - shown.length;
-  if (hidden) section.append(el('p', 'more', hidden + ' more completed'));
+  for (const group of GROUPS) {
+    const inGroup = items
+      .filter(item => item.status === group.status)
+      .sort((a, b) => String(b.completed || b.created).localeCompare(String(a.completed || a.created)));
 
-  board.append(section);
+    if (!inGroup.length) continue;
+
+    const section = el('section', 'group');
+    const label = el('p', 'group-label', group.label);
+    label.style.animationDelay = delay + 'ms';
+    section.append(label);
+    delay += STAGGER;
+
+    const shown = group.status === 'done' ? inGroup.slice(0, DONE_SHOWN) : inGroup;
+    for (const item of shown) {
+      section.append(itemNode(item, delay));
+      delay += STAGGER;
+    }
+
+    const hidden = inGroup.length - shown.length;
+    if (hidden) section.append(el('p', 'more', hidden + ' more completed'));
+
+    board.append(section);
+  }
 }
+
+poll();
+setInterval(poll, POLL_MS);
 </script>
 
 </body>

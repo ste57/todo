@@ -3,8 +3,8 @@
 Read this only when changing how the board looks. Adding and completing items needs nothing
 from here.
 
-The template is `board.html` in this directory. It is one file with no server, no build step,
-no npm, no CDN and no external fonts, and it works fully offline by double-click.
+The template is `board.html` plus `board-data.js` in this directory. Two files, no server, no
+build step, no npm, no CDN and no external fonts, working fully offline by double-click.
 
 ## What the screen is for
 
@@ -82,16 +82,25 @@ idea, done, and within a group the newest sits at the top.
 
 ## Rendering notes
 
-Items are stored one JSON object per line in a block above the styles, not as a JSON array.
-That shape is chosen for the write path: every add, update and delete becomes one whole-line
-edit, with no commas to place and no first or last item to special-case. A line that fails to
-parse drops itself and the rest of the board still renders, so a bad write costs one item
-rather than the page.
+Items live in `board-data.js`, one `S({...})` call per line, not in the HTML and not as a JSON
+array. That shape is chosen for the write path: every add, update and delete is one whole-line
+edit, with no commas to place and no first or last item to special-case.
 
-A literal `<` inside the data block closes it early, spilling raw JSON onto the page and
-losing every item below it, so the write path escapes every `<` as `\u003c`. That is a write-time
-rule and cannot be fixed in the renderer: the HTML parser has already closed the tag before
-any script runs.
+The data is a sibling file because it is what makes the board live. A page on `file://` cannot
+read its own source, and `fetch` and `XMLHttpRequest` to a `file://` URL are blocked, but a
+page can go on loading script tags. The board appends one every second with a fresh query
+string, which is what forces the read to come off disk rather than the cache, so an edit
+appears without a reload and with nothing running but the page. It redraws only when the data
+actually differs, so an unchanged board never re-animates.
+
+`S.end()` is the last line of the data file and sets the flag that lets a poll commit. A
+half-written or malformed file fails to parse whole, so the flag stays down, the poll is
+discarded and the last good board stays on screen until the next write fixes it. Resilience
+lives in the poll rather than in the parse: a bad write costs a second of staleness rather
+than an item.
+
+Nothing in the data file needs escaping beyond ordinary JSON, because it is no longer inside a
+script tag that a `<` could close early.
 
 Item text is written with `textContent` rather than interpolated into markup, so titles and
 notes cannot break the page or inject anything.

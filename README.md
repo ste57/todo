@@ -1,10 +1,12 @@
 # Slate
 
-A Claude Code skill that keeps a todo board as one self-contained HTML file on your Desktop.
-You raise work in conversation, the skill logs it and marks it done when the work finishes.
+A Claude Code skill that keeps a todo board on your Desktop. You raise work in conversation,
+the skill logs it and marks it done when the work finishes.
 
-The board lives at `~/Desktop/slate.html`. It opens by double-click, works offline, and has no
-server, no build step and no dependencies.
+The board lives at `~/Desktop/.slate.html`, with its items alongside it in `.slate-data.js`. It
+opens by double-click, works offline, and has no server, no build step and no dependencies.
+Leave it open and it updates itself: the page re-reads its data once a second, so items appear
+and complete while you watch, with no refresh.
 
 ## Install
 
@@ -30,10 +32,10 @@ a wrong item costs one deletable line.
 
 ## The board
 
-Items sit near the top of the HTML, one JSON object per line, rendered by a small inline
-script. Adding, changing or removing an item is one whole line, never the markup.
+Items sit in `.slate-data.js`, one per line, rendered by a small script in the HTML. Adding,
+changing or removing an item is one whole line, never the markup.
 
-    {"id":"kebab-slug","title":"...","status":"idea","created":"YYYY-MM-DD","completed":null,"note":null}
+    S({"id":"kebab-slug","title":"...","status":"idea","created":"YYYY-MM-DD","completed":null,"note":null})
 
 Three states: `idea` raised but not started, `active` in progress, `done` finished. Done items
 recede and are capped at the five most recent, so the board cannot grow unbounded.
