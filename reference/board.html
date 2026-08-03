@@ -83,26 +83,13 @@ body {
    the marker toward faint. Something that has claimed to be in progress since yesterday stops
    looking like it, without anyone having to maintain a flag. */
 .active .marker {
-  overflow: hidden;
   --live: color-mix(in oklab, var(--accent) calc(var(--heat, 1) * 100%), var(--faint));
   background: var(--live);
-  animation: active-glow 3.2s ease-in-out infinite;
+  animation: active-flow 4s ease-in-out infinite;
 }
 
 /* Gone cold: it stops breathing too. A stalled item should not animate as though it is moving. */
 .active.cold .marker { animation: none; }
-.active.cold .marker::after { animation: none; opacity: 0; }
-
-.active .marker::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.38) 48%, transparent 61%);
-  opacity: 0;
-  transform: translateX(-85%) rotate(16deg);
-  animation: active-shimmer 3.2s ease-in-out infinite;
-}
 
 /* The check needs more box than a dot to read at this size. The -1px pulls its
    ink back onto the dot centres, keeping one marker rail across all states. */
@@ -208,28 +195,12 @@ body {
   to { opacity: 1; transform: none; }
 }
 
-@keyframes active-glow {
+@keyframes active-flow {
   0%, 100% {
-    filter: brightness(1);
-    transform: scale(1);
+    background: color-mix(in oklab, var(--live) 82%, #4b6540);
   }
   50% {
-    filter: brightness(1.1);
-    transform: scale(1.04);
-  }
-}
-
-@keyframes active-shimmer {
-  0%, 55% {
-    opacity: 0;
-    transform: translateX(-85%) rotate(16deg);
-  }
-  70% {
-    opacity: 0.65;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(85%) rotate(16deg);
+    background: color-mix(in oklab, var(--live) 76%, #9a8f61);
   }
 }
 
@@ -240,7 +211,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .group-label, .item { animation: none; }
   .active .marker { animation: none; }
-  .active .marker::after { animation: none; opacity: 0; }
 }
 </style>
 </head>
