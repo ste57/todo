@@ -58,8 +58,8 @@ something new needs to appear on the board, give it an existing role rather than
 ## Colour
 
 Four neutrals and one accent per scheme, as custom properties on `:root`, with the dark set
-behind `prefers-color-scheme`. `color-scheme: light dark` is declared so form and scrollbar
-chrome follow.
+behind `prefers-color-scheme`. The accent is muted sage: earthy, clean and quiet enough to
+stay informational. `color-scheme: light dark` is declared so form and scrollbar chrome follow.
 
 **The accent appears on active markers and nowhere else.** That is the whole point of it:
 colour answers "what is in flight" rather than decorating. Spending the accent on a second
