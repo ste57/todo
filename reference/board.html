@@ -67,6 +67,8 @@ body {
 
 /* 9px marker optically centred on the 22.5px first line of the title. */
 .marker {
+  display: block;
+  position: relative;
   width: 9px;
   height: 9px;
   margin-top: 7px;
@@ -75,10 +77,33 @@ body {
 
 .idea .marker { box-shadow: inset 0 0 0 1.5px var(--faint); }
 
-/* The accent appears here and nowhere else: colour answers "what is in flight". */
+/* The accent appears here and nowhere else: colour answers "what is in flight".
+   It also cools. Nothing in a file can observe whether an agent is still alive, so the board
+   reports age instead of liveness: --heat runs from 1 to 0 across the window below, draining
+   the marker toward faint. Something that has claimed to be in progress since yesterday stops
+   looking like it, without anyone having to maintain a flag. */
 .active .marker {
-  background: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-halo);
+  overflow: hidden;
+  --live: color-mix(in oklab, var(--accent) calc(var(--heat, 1) * 100%), var(--faint));
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.85) 0 1px, rgba(255, 255, 255, 0.24) 1.5px 2.8px, transparent 3px),
+    var(--live);
+  animation: active-glow 3.2s ease-in-out infinite;
+}
+
+/* Gone cold: it stops breathing too. A stalled item should not animate as though it is moving. */
+.active.cold .marker { animation: none; }
+.active.cold .marker::after { animation: none; opacity: 0; }
+
+.active .marker::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.38) 48%, transparent 61%);
+  opacity: 0;
+  transform: translateX(-85%) rotate(16deg);
+  animation: active-shimmer 3.2s ease-in-out infinite;
 }
 
 /* The check needs more box than a dot to read at this size. The -1px pulls its
@@ -96,6 +121,29 @@ body {
 
 .title { font-size: 15px; line-height: 1.5; }
 
+/* Project over date, right-aligned as one block. Two identical greys read as a collision, so
+   the project takes the label weight and the date sits under it a step quieter and smaller.
+   One block, two levels, rather than two things competing for the same edge. */
+.meta {
+  padding-left: 24px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.meta .project {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22.5px;
+  color: var(--muted);
+}
+
+/* Done items are short and single line, so the project reads well in front of the title where
+   it groups the row at a glance. In progress items wrap, and inline it indented only the first
+   line, so there it stays in the meta block. */
+.title .project { color: var(--faint); }
+.title .project::after { content: "\00B7"; margin: 0 0.4em; }
+
 /* Done recedes by dropping a step in the text hierarchy, never by strike-through. */
 .done .title { color: var(--muted); }
 
@@ -106,13 +154,22 @@ body {
   color: var(--muted);
 }
 
-.date {
-  padding-left: 20px;
-  font-size: 12px;
-  line-height: 22.5px;
+.meta .date {
+  display: block;
+  margin-top: -2px;
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+/* Done rows carry the project inline, so their date is alone in the block. The stacked
+   treatment above is tuned to sit under a project; alone it needs the full meta line-height to
+   stay on the title's first-line rail. */
+.meta .date:only-child {
+  margin-top: 0;
+  font-size: 12px;
+  line-height: 22.5px;
 }
 
 .more, .empty {
@@ -121,12 +178,55 @@ body {
   color: var(--faint);
 }
 
-.more { margin: 12px 0 0; }
+/* Stays in the meta role: same size, same faint. Only the cursor and a colour step on hover
+   say it is a control, so the collapsed board looks exactly as it did. */
+.more {
+  appearance: none; -webkit-appearance: none;
+  background: none; border: 0;
+  /* Only the UA button font is being reset. The `font` shorthand would take font-size with it
+     and, being the later rule of equal specificity, silently undo the 12px above. */
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  display: block;
+  margin: 12px 0 0;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.more:hover { color: var(--muted); }
+.more:focus-visible { outline: 1.5px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 .empty { margin: 0; }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: none; }
+}
+
+@keyframes active-glow {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.1);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes active-shimmer {
+  0%, 55% {
+    opacity: 0;
+    transform: translateX(-85%) rotate(16deg);
+  }
+  70% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(85%) rotate(16deg);
+  }
 }
 
 .group-label, .item {
@@ -135,6 +235,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .group-label, .item { animation: none; }
+  .active .marker { animation: none; }
+  .active .marker::after { animation: none; opacity: 0; }
 }
 </style>
 </head>
@@ -155,7 +257,11 @@ const GROUPS = [
   { status: 'idea', label: 'Ideas' },
   { status: 'done', label: 'Done' }
 ];
-const DONE_SHOWN = 5;
+const DONE_SHOWN = 50;
+// Warm for the first two hours, fully drained by twenty four. Long enough that real work is
+// never mislabelled, short enough that yesterday's abandoned item cannot pass for live.
+const WARM_HOURS = 2;
+const COLD_HOURS = 24;
 const STAGGER = 26;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CHECK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 6.3 4.8 8.7 9.6 3.3"/></svg>';
@@ -163,6 +269,7 @@ const CHECK = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke
 let incoming = [];
 let parsed = false;
 let showing = null;
+const expanded = new Set();
 
 // The data file calls these. S.end() is the last line of it, so it only runs if the whole
 // file parsed: a half written or malformed file leaves the board on its last good state
@@ -206,21 +313,52 @@ function el(tag, className, text) {
   return node;
 }
 
+// 1 while warm, 0 once cold, linear between. No started stamp means an item predates the
+// field, so it is left fully lit rather than accused of being stale.
+function heat(item) {
+  if (item.status !== 'active' || !item.started) return 1;
+  const hours = (Date.now() - Date.parse(item.started)) / 3600000;
+  if (!isFinite(hours) || hours <= WARM_HOURS) return 1;
+  if (hours >= COLD_HOURS) return 0;
+  return 1 - (hours - WARM_HOURS) / (COLD_HOURS - WARM_HOURS);
+}
+
+function stampFor(item) {
+  if (item.status === 'done') return item.completed || item.created;
+  if (item.status === 'active') return item.started || item.created;
+  return item.created;
+}
+
 function itemNode(item, delay) {
   const row = el('div', 'item ' + item.status);
   row.style.animationDelay = delay + 'ms';
+  row.dataset.id = item.id;
+
+  const warmth = heat(item);
+  if (item.status === 'active') {
+    row.style.setProperty('--heat', warmth.toFixed(3));
+    if (warmth < 0.35) row.classList.add('cold');
+  }
 
   const marker = el('span', 'marker');
   if (item.status === 'done') marker.innerHTML = CHECK;
   row.append(marker);
 
   const body = el('div');
-  body.append(el('div', 'title', item.title));
+  const title = el('div', 'title');
+  if (item.project && item.status === 'done') title.append(el('span', 'project', item.project));
+  title.append(document.createTextNode(item.title));
+  body.append(title);
   if (item.note) body.append(el('div', 'note', item.note));
   row.append(body);
 
   const stamp = item.status === 'done' ? item.completed : item.created;
-  row.append(el('div', 'date', formatDate(stamp)));
+  const meta = el('div', 'meta');
+  if (item.project && item.status !== 'done') meta.append(el('span', 'project', item.project));
+  meta.append(el('span', 'date', formatDate(stamp)));
+
+  row.append(meta);
+
   return row;
 }
 
@@ -235,9 +373,12 @@ function draw(items) {
   }
 
   for (const group of GROUPS) {
+    // Sorted by the stamp that matters for the state: when it finished, when it was picked up,
+    // when it was raised. Active sorting by `started` floats live work to the top of the group
+    // and sinks the stalled, so the order carries the same signal the fading colour does.
     const inGroup = items
       .filter(item => item.status === group.status)
-      .sort((a, b) => String(b.completed || b.created).localeCompare(String(a.completed || a.created)));
+      .sort((a, b) => String(stampFor(b)).localeCompare(String(stampFor(a))));
 
     if (!inGroup.length) continue;
 
@@ -247,14 +388,26 @@ function draw(items) {
     section.append(label);
     delay += STAGGER;
 
-    const shown = group.status === 'done' ? inGroup.slice(0, DONE_SHOWN) : inGroup;
+    const capped = group.status === 'done' && !expanded.has(group.status);
+    const shown = capped ? inGroup.slice(0, DONE_SHOWN) : inGroup;
     for (const item of shown) {
       section.append(itemNode(item, delay));
       delay += STAGGER;
     }
 
+    // Only the done group is ever capped, so only it gets a control. Without this an Ideas
+    // group past DONE_SHOWN rendered a "Show fewer" button that collapsed nothing.
+    const cappable = group.status === 'done';
     const hidden = inGroup.length - shown.length;
-    if (hidden) section.append(el('p', 'more', hidden + ' more completed'));
+    if (cappable && (hidden || (inGroup.length > DONE_SHOWN && !capped))) {
+      const more = el('button', 'more', hidden ? hidden + ' more completed' : 'Show fewer');
+      more.type = 'button';
+      more.addEventListener('click', () => {
+        if (hidden) expanded.add(group.status); else expanded.delete(group.status);
+        draw(JSON.parse(showing));
+      });
+      section.append(more);
+    }
 
     board.append(section);
   }
@@ -262,6 +415,21 @@ function draw(items) {
 
 poll();
 setInterval(poll, POLL_MS);
+
+// Heat is a function of the clock, not the file, so nothing else would repaint it. Updated in
+// place rather than through draw(): a rebuild would clear the board and replay the staggered
+// rise every five minutes, on a surface whose entire motion budget is that one animation.
+setInterval(() => {
+  if (!showing) return;
+  const byId = new Map(JSON.parse(showing).map(item => [item.id, item]));
+  for (const row of document.querySelectorAll('.item.active')) {
+    const item = byId.get(row.dataset.id);
+    if (!item) continue;
+    const warmth = heat(item);
+    row.style.setProperty('--heat', warmth.toFixed(3));
+    row.classList.toggle('cold', warmth < 0.35);
+  }
+}, 300000);
 </script>
 
 </body>
