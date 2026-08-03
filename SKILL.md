@@ -1,11 +1,11 @@
 ---
 name: slate
-description: Maintains a single todo board as one self-contained HTML file at ~/Desktop/slate.html. Use when the user raises work in normal conversation, either asking for something to be done or stating an intention to act, and when that work finishes. Logs items silently and marks them done in place, so one glance at the board says what is in progress and what is not.
+description: Maintains a single todo board as one self-contained HTML file at ~/Desktop/.slate.html. Use when the user raises work in normal conversation, either asking for something to be done or stating an intention to act, and when that work finishes. Logs items silently and marks them done in place, so one glance at the board says what is in progress and what is not.
 ---
 
 # Slate
 
-One HTML file on the Desktop, `~/Desktop/slate.html`, answering one question at a glance:
+One HTML file on the Desktop, `~/Desktop/.slate.html`, answering one question at a glance:
 what is in progress, and what is not. The user raises work in normal conversation and you
 keep the board current without being asked.
 
@@ -44,9 +44,9 @@ in one short line.
 
 ## Updating the board
 
-Items live in a `<script type="application/x-ndjson" id="data">` block near the top of the
-file, **one JSON object per line**, and an inline script renders them. **Only ever touch those
-lines.** Never edit the markup, the styles or the render script.
+Items live in `~/Desktop/.slate-data.js`, **one `S({...})` call per line**. `slate.html` polls
+that file once a second and redraws when it changes, so the board updates itself while it is
+open. **Never edit `slate.html`.** It holds only markup, styles and the render.
 
 One item per line is what makes this reliable: there are no commas to place, no first or last
 item to special-case, and adding the first item is the same edit as adding the hundredth. Every
@@ -54,20 +54,20 @@ operation below is one whole line.
 
 Item schema, written on a single line:
 
-    {"id":"kebab-slug","title":"...","status":"idea","created":"YYYY-MM-DD","completed":null,"note":null}
+    S({"id":"kebab-slug","title":"...","status":"idea","created":"YYYY-MM-DD","completed":null,"note":null})
+
+The last line of the file is always `S.end()`. It is how the board knows the file parsed whole,
+so never remove it and never write below it.
 
 ### Read the current items
 
-Read the file with `offset: 1, limit: 60`. The block sits above the styles, so that window
-holds every item without loading the rest of the file. If the closing `</script>` is not in
-view, the board is unusually long, so read further. Do this first, every time, so you know
-what is already on the board.
+Read `~/Desktop/.slate-data.js`. It holds nothing but items, so read all of it. Do this first,
+every time, so you know what is already on the board.
 
 ### Add
 
-Insert the new line directly after `<script type="application/x-ndjson" id="data">`. That
-anchor is unique and never moves, so this edit is identical whether the board is empty or full.
-Newest items sit at the top of the block.
+Insert the new line directly above the first `S(` line, or directly above `S.end()` when the
+board is empty. Newest items sit at the top.
 
 ### Update
 
@@ -87,16 +87,14 @@ abandoned work `done`.
 - `note` is optional and rare. Use it only for a constraint the title cannot carry.
 - `completed` is set only on `done` and is `null` otherwise.
 - Three states only: `idea`, `active`, `done`. Resist adding more.
-- **Always write `<` as `\u003c` in `title` and `note`.** Every one of them, with no judgement
-  about whether a particular `<` looks dangerous. Quotes, apostrophes, backslashes, emoji and
-  everything else are safe under ordinary JSON escaping, but a literal `<` can close the data
-  block early, which spills raw JSON onto the page and loses every item below it. `\u003c` is
-  valid JSON and reads back as a plain `<`, so escaping every time costs nothing and removes
-  the judgement call.
+- Ordinary JSON escaping is all any field needs. There is no character to watch for.
 
-If `~/Desktop/slate.html` does not exist, copy `reference/board.html` there, then add the first
-item exactly as above. A line that fails to parse drops itself and the rest of the board still
-renders, so a bad write degrades to one missing item rather than a blank page.
+If the board does not exist, copy `reference/board.html` to `~/Desktop/.slate.html` and
+`reference/board-data.js` to `~/Desktop/.slate-data.js`, then add the first item. The two files
+sit side by side and the board cannot find its data if they are separated.
+
+A file that fails to parse never reaches the board: `S.end()` does not run, the poll is
+discarded, and the last good state stays on screen until the next write fixes it.
 
 Design detail lives in `reference/design.md`. You do not need it to add or complete an item,
 only to change how the board looks.
